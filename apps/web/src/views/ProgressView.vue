@@ -61,13 +61,18 @@ async function saveWeight() {
         <p class="text-sm font-bold">体重</p>
         <p class="text-xs text-mute">{{ auth.user?.name }}</p>
       </div>
-      <div class="mt-4 flex h-36 items-end gap-1">
+      <div class="mt-4 flex h-36 items-end gap-2">
         <div
           v-for="point in stats?.metrics ?? []"
           :key="point.id"
-          class="flex flex-1 flex-col items-center justify-end gap-1"
+          class="flex h-full min-w-0 flex-1 flex-col items-center gap-1"
         >
-          <div class="w-full rounded-t-md bg-acid" :style="{ height: barHeight(point.weightKg) }" />
+          <div class="flex w-full flex-1 items-end">
+            <div
+              class="w-full min-h-2 rounded-t-md bg-acid"
+              :style="{ height: barHeight(point.weightKg) }"
+            />
+          </div>
           <span class="text-[10px] text-mute">{{ dayLabel(point.loggedAt) }}</span>
         </div>
         <p v-if="!stats?.metrics.length" class="w-full text-center text-sm text-mute">还没有体重记录</p>
