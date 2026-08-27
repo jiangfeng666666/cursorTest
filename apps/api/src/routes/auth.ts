@@ -52,7 +52,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     const token = await reply.jwtSign({ sub: user.id })
     reply.setCookie('token', token, cookieOptions())
-    return publicUser(user)
+    return { ...publicUser(user), token }
   })
 
   app.post('/api/auth/login', async (request, reply) => {
@@ -69,7 +69,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     const token = await reply.jwtSign({ sub: user.id })
     reply.setCookie('token', token, cookieOptions())
-    return publicUser(user)
+    return { ...publicUser(user), token }
   })
 
   app.post('/api/auth/logout', async (_request, reply) => {

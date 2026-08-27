@@ -2,16 +2,17 @@
   "name": "kailian",
   "private": true,
   "version": "0.1.0",
-  "description": "开练 — Vue 3 + Node.js 健身训练记录",
+  "description": "开练 — UniApp + Node.js 健身训练记录",
   "workspaces": [
     "apps/*"
   ],
   "scripts": {
     "setup": "npm install && npm run db:setup -w api",
-    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
+    "dev": "concurrently -n api,uni -c cyan,magenta \"npm run dev -w api\" \"npm run dev:h5 -w uni\"",
     "dev:api": "npm run dev -w api",
-    "dev:web": "npm run dev -w web",
-    "build": "npm run build -w web && npm run build -w api",
+    "dev:h5": "npm run dev:h5 -w uni",
+    "dev:mp-weixin": "npm run dev:mp-weixin -w uni",
+    "build": "npm run build:h5 -w uni && npm run build -w api",
     "db:setup": "npm run db:setup -w api",
     "db:seed": "npm run db:seed -w api"
   },
