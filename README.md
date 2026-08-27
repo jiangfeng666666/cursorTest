@@ -32,3 +32,5 @@ apps/api   Fastify + Prisma + SQLite
 ```
 
 登录用 JWT：接口会返回 `token`，客户端存在本地，请求带 `Authorization: Bearer`。H5 仍兼容 cookie。
+
+第一版能记训练，也能记吃饭：早餐/午餐/晚餐/加餐，点选常见食物或手填热量。

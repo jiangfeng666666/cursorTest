@@ -60,6 +60,10 @@ async function logout() {
   uni.reLaunch({ url: '/pages/login/login' })
 }
 
+function goMeals() {
+  uni.navigateTo({ url: '/pages/meals/meals' })
+}
+
 function exerciseLine(template: Template) {
   return template.exercises.map((item) => item.name).join(' · ')
 }
@@ -86,6 +90,13 @@ function exerciseLine(template: Template) {
         <text class="stat-num">{{ stats?.totalWorkouts ?? '—' }}</text>
         <text class="sub">场训练</text>
       </view>
+    </view>
+
+    <view class="card eat" @click="goMeals">
+      <text class="acid tiny">吃饭</text>
+      <view class="active-title">今天 {{ Math.round(stats?.kcalToday || 0) }} kcal</view>
+      <text class="sub">蛋白 {{ Math.round(stats?.proteinToday || 0) }} g · {{ stats?.mealsToday || 0 }} 笔</text>
+      <button class="btn btn-acid" @click.stop="goMeals">去记一顿</button>
     </view>
 
     <view v-if="active" class="card active">
@@ -143,8 +154,12 @@ function exerciseLine(template: Template) {
   font-weight: 700;
   margin: 8rpx 0;
 }
-.active .btn {
+.active .btn,
+.eat .btn {
   margin-top: 24rpx;
+}
+.eat {
+  margin-top: 32rpx;
 }
 .tiny {
   font-size: 22rpx;

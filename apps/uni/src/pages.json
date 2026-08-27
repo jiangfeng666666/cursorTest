@@ -37,11 +37,11 @@
       }
     },
     {
-      "path": "pages/detail/detail",
+      "path": "pages/meals/meals",
       "style": {
-        "navigationBarTitleText": "详情"
+        "navigationBarTitleText": "吃饭"
       }
-    }
+    },
   ],
   "globalStyle": {
     "navigationBarTextStyle": "white",

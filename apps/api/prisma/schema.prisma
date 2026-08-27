@@ -15,6 +15,7 @@ model User {
   createdAt    DateTime     @default(now())
   workouts     Workout[]
   metrics      BodyMetric[]
+  meals        Meal[]
 }
 
 model Exercise {
@@ -68,4 +69,30 @@ model BodyMetric {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   weightKg  Float
   loggedAt  DateTime @default(now())
+}
+
+model Food {
+  id            String @id @default(cuid())
+  name          String @unique
+  category      String
+  servingLabel  String
+  kcal          Float
+  proteinG      Float
+  meals         Meal[]
+}
+
+model Meal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot      String
+  foodId    String?
+  food      Food?    @relation(fields: [foodId], references: [id])
+  name      String
+  servings  Float
+  kcal      Float
+  proteinG  Float
+  eatenAt   DateTime @default(now())
+
+  @@index([userId, eatenAt])
 }

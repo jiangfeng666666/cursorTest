@@ -7,6 +7,12 @@ const metricBody = z.object({
   weightKg: z.number().min(20).max(400),
 })
 
+function startOfToday() {
+  const copy = new Date()
+  copy.setHours(0, 0, 0, 0)
+  return copy
+}
+
 function startOfWeek(date: Date) {
   const copy = new Date(date)
   const day = copy.getDay()
@@ -21,7 +27,7 @@ export async function statsRoutes(app: FastifyInstance) {
     const uid = userIdFrom(request)
     const weekStart = startOfWeek(new Date())
 
-    const [workoutsThisWeek, totalWorkouts, metrics, recent] = await Promise.all([
+    const [workoutsThisWeek, totalWorkouts, metrics, recent, mealsToday] = await Promise.all([
       prisma.workout.count({
         where: { userId: uid, finishedAt: { not: null }, startedAt: { gte: weekStart } },
       }),
@@ -36,6 +42,9 @@ export async function statsRoutes(app: FastifyInstance) {
         orderBy: { startedAt: 'desc' },
         take: 5,
         include: { sets: true },
+      }),
+      prisma.meal.findMany({
+        where: { userId: uid, eatenAt: { gte: startOfToday() } },
       }),
     ])
 
@@ -57,6 +66,9 @@ export async function statsRoutes(app: FastifyInstance) {
         setCount: workout.sets.length,
         volume: workout.sets.reduce((sum, set) => sum + set.weightKg * set.reps, 0),
       })),
+      kcalToday: mealsToday.reduce((sum, meal) => sum + meal.kcal, 0),
+      proteinToday: mealsToday.reduce((sum, meal) => sum + meal.proteinG, 0),
+      mealsToday: mealsToday.length,
     }
   })
 

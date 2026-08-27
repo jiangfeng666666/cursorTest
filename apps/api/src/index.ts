@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { authenticate } from './auth.js'
 import { authRoutes } from './routes/auth.js'
 import { catalogRoutes } from './routes/catalog.js'
+import { mealRoutes } from './routes/meals.js'
 import { statsRoutes } from './routes/stats.js'
 import { workoutRoutes } from './routes/workouts.js'
 
@@ -61,6 +62,7 @@ app.get('/api/health', async () => ({ ok: true, name: 'kailian' }))
 await app.register(authRoutes)
 await app.register(catalogRoutes)
 await app.register(workoutRoutes)
+await app.register(mealRoutes)
 await app.register(statsRoutes)
 
 const port = Number(process.env.PORT ?? 3001)

@@ -57,6 +57,38 @@ export type Stats = {
   totalWorkouts: number
   metrics: { id: string; weightKg: number; loggedAt: string }[]
   recentWorkouts: WorkoutSummary[]
+  kcalToday: number
+  proteinToday: number
+  mealsToday: number
+}
+
+export type Food = {
+  id: string
+  name: string
+  category: string
+  servingLabel: string
+  kcal: number
+  proteinG: number
+}
+
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export type Meal = {
+  id: string
+  slot: MealSlot
+  name: string
+  servings: number
+  kcal: number
+  proteinG: number
+  eatenAt: string
+  servingLabel: string
+}
+
+export type DayMeals = {
+  date: string
+  totalKcal: number
+  totalProtein: number
+  meals: Meal[]
 }
 
 export class ApiError extends Error {
@@ -140,6 +172,17 @@ export const api = {
   finishWorkout: (workoutId: string) =>
     request<Workout>(`/workouts/${workoutId}/finish`, { method: 'POST', data: {} }),
   stats: () => request<Stats>('/stats'),
+  foods: () => request<Food[]>('/foods'),
+  meals: (date?: string) => request<DayMeals>(date ? `/meals?date=${date}` : '/meals'),
+  logMeal: (payload: {
+    slot: MealSlot
+    foodId?: string
+    name?: string
+    servings?: number
+    kcal?: number
+    proteinG?: number
+  }) => request<Meal>('/meals', { method: 'POST', data: payload }),
+  deleteMeal: (id: string) => request<{ ok: boolean }>(`/meals/${id}`, { method: 'DELETE', data: {} }),
   logWeight: (weightKg: number) =>
     request<{ id: string; weightKg: number; loggedAt: string }>('/metrics', {
       method: 'POST',
