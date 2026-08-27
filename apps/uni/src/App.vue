@@ -70,13 +70,13 @@ button::after {
 }
 
 .btn-acid {
-  background: #d6ff4b;
-  color: #11140f;
+  background: #d6ff4b !important;
+  color: #11140f !important;
 }
 
 .btn-ink {
-  background: #e8eedf;
-  color: #11140f;
+  background: #e8eedf !important;
+  color: #11140f !important;
 }
 
 .btn-ghost {
