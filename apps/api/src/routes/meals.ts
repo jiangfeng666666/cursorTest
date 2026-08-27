@@ -12,6 +12,13 @@ const createBody = z.object({
   servings: z.number().positive().max(20).optional(),
   kcal: z.number().min(0).max(5000).optional(),
   proteinG: z.number().min(0).max(400).optional(),
+  mediaUrl: z.string().max(300).optional(),
+  mediaKind: z.enum(['image', 'video']).optional(),
+})
+
+const mediaBody = z.object({
+  mediaUrl: z.string().max(300),
+  mediaKind: z.enum(['image', 'video']),
 })
 
 function dayRange(dateText?: string) {
@@ -29,6 +36,10 @@ function dayRange(dateText?: string) {
   return { start: base, end }
 }
 
+function mediaOk(url?: string) {
+  return !url || url.startsWith('/uploads/')
+}
+
 function serialize(meal: {
   id: string
   slot: string
@@ -37,6 +48,8 @@ function serialize(meal: {
   kcal: number
   proteinG: number
   eatenAt: Date
+  mediaUrl: string | null
+  mediaKind: string | null
   food: { servingLabel: string } | null
 }) {
   return {
@@ -48,6 +61,8 @@ function serialize(meal: {
     proteinG: meal.proteinG,
     eatenAt: meal.eatenAt,
     servingLabel: meal.food?.servingLabel ?? '份',
+    mediaUrl: meal.mediaUrl,
+    mediaKind: meal.mediaKind as 'image' | 'video' | null,
   }
 }
 
@@ -106,6 +121,9 @@ export async function mealRoutes(app: FastifyInstance) {
     if (!name || kcal == null) {
       return reply.code(400).send({ error: '请选择食物或填写名称和热量' })
     }
+    if (!mediaOk(parsed.data.mediaUrl) || (parsed.data.mediaUrl && !parsed.data.mediaKind)) {
+      return reply.code(400).send({ error: '媒体地址不对' })
+    }
 
     const meal = await prisma.meal.create({
       data: {
@@ -116,11 +134,31 @@ export async function mealRoutes(app: FastifyInstance) {
         servings,
         kcal,
         proteinG,
+        mediaUrl: parsed.data.mediaUrl,
+        mediaKind: parsed.data.mediaKind,
       },
       include: { food: true },
     })
 
     return serialize(meal)
+  })
+
+  app.patch('/api/meals/:id', { preHandler: authenticate }, async (request, reply) => {
+    const parsed = mediaBody.safeParse(request.body)
+    if (!parsed.success || !mediaOk(parsed.data.mediaUrl)) {
+      return reply.code(400).send({ error: '媒体地址不对' })
+    }
+    const { id } = request.params as { id: string }
+    const meal = await prisma.meal.findFirst({
+      where: { id, userId: userIdFrom(request) },
+    })
+    if (!meal) return reply.code(404).send({ error: '找不到这条记录' })
+    const updated = await prisma.meal.update({
+      where: { id },
+      data: { mediaUrl: parsed.data.mediaUrl, mediaKind: parsed.data.mediaKind },
+      include: { food: true },
+    })
+    return serialize(updated)
   })
 
   app.delete('/api/meals/:id', { preHandler: authenticate }, async (request, reply) => {

@@ -93,6 +93,8 @@ model Meal {
   kcal      Float
   proteinG  Float
   eatenAt   DateTime @default(now())
+  mediaUrl  String?
+  mediaKind String?
 
   @@index([userId, eatenAt])
 }

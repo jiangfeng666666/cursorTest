@@ -10,5 +10,7 @@ dist
 unpackage
 apps/uni/dist
 apps/api/generated
+apps/api/uploads
+uploads
 .vscode
 *.tsbuildinfo

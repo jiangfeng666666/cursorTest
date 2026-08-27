@@ -2,7 +2,9 @@ import Fastify from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
-import { readFileSync } from 'node:fs'
+import multipart from '@fastify/multipart'
+import staticFiles from '@fastify/static'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { authenticate } from './auth.js'
@@ -10,6 +12,7 @@ import { authRoutes } from './routes/auth.js'
 import { catalogRoutes } from './routes/catalog.js'
 import { mealRoutes } from './routes/meals.js'
 import { statsRoutes } from './routes/stats.js'
+import { uploadRoutes, uploadsRoot } from './routes/uploads.js'
 import { workoutRoutes } from './routes/workouts.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -40,7 +43,7 @@ function loadEnv() {
 
 loadEnv()
 
-const app = Fastify({ logger: true })
+const app = Fastify({ logger: true, bodyLimit: 45 * 1024 * 1024 })
 
 await app.register(cors, {
   origin: true,
@@ -54,6 +57,16 @@ await app.register(jwt, {
     signed: false,
   },
 })
+await app.register(multipart, {
+  limits: { fileSize: 40 * 1024 * 1024 },
+})
+
+const uploadDir = uploadsRoot()
+mkdirSync(uploadDir, { recursive: true })
+await app.register(staticFiles, {
+  root: uploadDir,
+  prefix: '/uploads/',
+})
 
 app.decorate('authenticate', authenticate)
 
@@ -63,6 +76,7 @@ await app.register(authRoutes)
 await app.register(catalogRoutes)
 await app.register(workoutRoutes)
 await app.register(mealRoutes)
+await app.register(uploadRoutes)
 await app.register(statsRoutes)
 
 const port = Number(process.env.PORT ?? 3001)

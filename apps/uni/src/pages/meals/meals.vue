@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { api, ApiError, type DayMeals, type Food, type MealSlot } from '../../utils/api'
+import {
+  api,
+  ApiError,
+  fileUrl,
+  type DayMeals,
+  type Food,
+  type Meal,
+  type MealSlot,
+} from '../../utils/api'
 import { useAuthStore } from '../../stores/auth'
 
 const slots: { id: MealSlot; name: string }[] = [
@@ -20,6 +28,8 @@ const customKcal = ref(300)
 const customProtein = ref(10)
 const error = ref('')
 const busy = ref(false)
+const pending = ref<{ url: string; kind: 'image' | 'video' } | null>(null)
+const preview = ref<{ url: string; kind: 'image' | 'video' } | null>(null)
 
 const grouped = computed(() =>
   slots.map((item) => ({
@@ -43,11 +53,18 @@ async function refresh() {
   }
 }
 
+function mediaPayload() {
+  return pending.value
+    ? { mediaUrl: pending.value.url, mediaKind: pending.value.kind }
+    : {}
+}
+
 async function addFood(food: Food) {
   busy.value = true
   error.value = ''
   try {
-    await api.logMeal({ slot: slot.value, foodId: food.id, servings: 1 })
+    await api.logMeal({ slot: slot.value, foodId: food.id, servings: 1, ...mediaPayload() })
+    pending.value = null
     day.value = await api.meals()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '没记下'
@@ -70,8 +87,10 @@ async function addCustom() {
       kcal: Number(customKcal.value),
       proteinG: Number(customProtein.value),
       servings: 1,
+      ...mediaPayload(),
     })
     customName.value = ''
+    pending.value = null
     day.value = await api.meals()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '没记下'
@@ -102,12 +121,67 @@ function onProteinInput(event: { detail: { value: string } }) {
   const value = Number(event.detail.value)
   if (Number.isFinite(value)) customProtein.value = value
 }
+
+function chooseKind(kind: 'image' | 'video', mealId?: string) {
+  if (kind === 'image') {
+    uni.chooseImage({
+      count: 1,
+      success: (res) => {
+        void uploadPath(res.tempFilePaths[0], mealId)
+      },
+    })
+    return
+  }
+  uni.chooseVideo({
+    compressed: true,
+    maxDuration: 60,
+    success: (res) => {
+      void uploadPath(res.tempFilePath, mealId)
+    },
+  })
+}
+
+function pickMedia(mealId?: string) {
+  uni.showActionSheet({
+    itemList: ['选图片', '选视频'],
+    success: (res) => {
+      chooseKind(res.tapIndex === 0 ? 'image' : 'video', mealId)
+    },
+  })
+}
+
+async function uploadPath(filePath: string, mealId?: string) {
+  busy.value = true
+  error.value = ''
+  try {
+    const uploaded = await api.uploadMedia(filePath)
+    if (mealId) {
+      await api.attachMealMedia(mealId, { mediaUrl: uploaded.url, mediaKind: uploaded.kind })
+      day.value = await api.meals()
+    } else {
+      pending.value = uploaded
+    }
+  } catch (err) {
+    error.value = err instanceof ApiError ? err.message : '上传失败'
+  } finally {
+    busy.value = false
+  }
+}
+
+function openMedia(meal: Meal) {
+  if (!meal.mediaUrl || !meal.mediaKind) return
+  preview.value = { url: fileUrl(meal.mediaUrl), kind: meal.mediaKind }
+}
+
+function srcOf(url: string) {
+  return fileUrl(url)
+}
 </script>
 
 <template>
   <view class="page">
     <view class="title">今天吃什么</view>
-    <text class="sub">点一下常见食物就能落账，外卖就手填热量。</text>
+    <text class="sub">点一下常见食物就能落账，外卖就手填热量。可以配一张图或一段视频。</text>
 
     <view class="totals">
       <view class="card stat">
@@ -138,24 +212,44 @@ function onProteinInput(event: { detail: { value: string } }) {
 
     <view v-for="group in grouped" :key="group.id" class="block">
       <text class="section">{{ group.name }}</text>
-      <view v-for="meal in group.meals" :key="meal.id" class="card row">
-        <view>
-          <text class="name">{{ meal.name }}</text>
-          <text class="sub">{{ meal.servings }} {{ meal.servingLabel }} · {{ meal.kcal }} kcal · 蛋白 {{ meal.proteinG }}g</text>
+      <view v-for="meal in group.meals" :key="meal.id" class="card meal">
+        <view class="row">
+          <view class="grow">
+            <text class="name">{{ meal.name }}</text>
+            <text class="sub">{{ meal.servings }}×{{ meal.servingLabel }} · {{ meal.kcal }} kcal · 蛋白 {{ meal.proteinG }}g</text>
+          </view>
+          <text class="sub" @click="remove(meal.id)">删除</text>
         </view>
-        <text class="sub" @click="remove(meal.id)">删除</text>
+        <image
+          v-if="meal.mediaKind === 'image' && meal.mediaUrl"
+          class="thumb"
+          mode="aspectFill"
+          :src="srcOf(meal.mediaUrl)"
+          @click="openMedia(meal)"
+        />
+        <video
+          v-else-if="meal.mediaKind === 'video' && meal.mediaUrl"
+          class="thumb"
+          :src="srcOf(meal.mediaUrl)"
+          controls
+          object-fit="cover"
+        />
+        <text v-else class="link" @click="pickMedia(meal.id)">补一张图/视频</text>
       </view>
       <text v-if="!group.meals.length" class="sub empty">还没记</text>
     </view>
 
     <text class="section">记到{{ slots.find((item) => item.id === slot)?.name }}</text>
+    <view v-if="pending" class="card pending">
+      <image v-if="pending.kind === 'image'" class="thumb" mode="aspectFill" :src="srcOf(pending.url)" />
+      <video v-else class="thumb" :src="srcOf(pending.url)" controls object-fit="cover" />
+      <text class="sub" @click="pending = null">去掉附件</text>
+    </view>
+    <view class="media-btns">
+      <button class="btn btn-ghost" :disabled="busy" @click="pickMedia()">配图/视频</button>
+    </view>
     <view class="chips">
-      <view
-        v-for="food in foods"
-        :key="food.id"
-        class="chip"
-        @click="addFood(food)"
-      >
+      <view v-for="food in foods" :key="food.id" class="chip" @click="addFood(food)">
         <text class="chip-name">{{ food.name }}</text>
         <text class="chip-kcal">{{ food.kcal }}kcal</text>
       </view>
@@ -175,6 +269,11 @@ function onProteinInput(event: { detail: { value: string } }) {
         </view>
       </view>
       <button class="btn btn-acid" :disabled="busy" @click="addCustom">记下这顿</button>
+    </view>
+
+    <view v-if="preview" class="mask" @click="preview = null">
+      <image v-if="preview.kind === 'image'" class="full" mode="aspectFit" :src="preview.url" />
+      <video v-else class="full" :src="preview.url" controls autoplay object-fit="contain" />
     </view>
   </view>
 </template>
@@ -224,11 +323,16 @@ function onProteinInput(event: { detail: { value: string } }) {
   color: #8b937c;
   font-size: 26rpx;
 }
+.meal {
+  margin-bottom: 12rpx;
+}
 .row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12rpx;
+}
+.grow {
+  flex: 1;
 }
 .name {
   display: block;
@@ -239,6 +343,19 @@ function onProteinInput(event: { detail: { value: string } }) {
 .empty {
   display: block;
   margin-bottom: 8rpx;
+}
+.link {
+  display: block;
+  margin-top: 16rpx;
+  color: #d6ff4b;
+  font-size: 24rpx;
+}
+.thumb {
+  width: 100%;
+  height: 280rpx;
+  border-radius: 20rpx;
+  margin-top: 16rpx;
+  background: #11140f;
 }
 .chips {
   display: flex;
@@ -259,6 +376,12 @@ function onProteinInput(event: { detail: { value: string } }) {
   font-size: 22rpx;
   color: #d6ff4b;
 }
+.media-btns {
+  margin: 8rpx 0 24rpx;
+}
+.pending {
+  margin-bottom: 16rpx;
+}
 .custom {
   margin-top: 32rpx;
 }
@@ -275,5 +398,23 @@ function onProteinInput(event: { detail: { value: string } }) {
 }
 .half .field {
   margin-top: 8rpx;
+}
+.mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.82);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  box-sizing: border-box;
+}
+.full {
+  width: 100%;
+  height: 70vh;
 }
 </style>

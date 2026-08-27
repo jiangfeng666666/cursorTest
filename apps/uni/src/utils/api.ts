@@ -82,6 +82,8 @@ export type Meal = {
   proteinG: number
   eatenAt: string
   servingLabel: string
+  mediaUrl: string | null
+  mediaKind: 'image' | 'video' | null
 }
 
 export type DayMeals = {
@@ -116,12 +118,26 @@ export function clearToken() {
   uni.removeStorageSync(TOKEN_KEY)
 }
 
+function origin() {
+  let host = ''
+  // #ifndef H5
+  host = 'http://127.0.0.1:3001'
+  // #endif
+  return host
+}
+
 function baseUrl() {
   let base = '/api'
   // #ifndef H5
   base = 'http://127.0.0.1:3001/api'
   // #endif
   return base
+}
+
+export function fileUrl(path: string) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${origin()}${path}`
 }
 
 function request<T>(path: string, options: { method?: UniNamespace.RequestOptions['method']; data?: unknown } = {}) {
@@ -181,7 +197,33 @@ export const api = {
     servings?: number
     kcal?: number
     proteinG?: number
+    mediaUrl?: string
+    mediaKind?: 'image' | 'video'
   }) => request<Meal>('/meals', { method: 'POST', data: payload }),
+  attachMealMedia: (id: string, payload: { mediaUrl: string; mediaKind: 'image' | 'video' }) =>
+    request<Meal>(`/meals/${id}`, { method: 'PATCH', data: payload }),
+  uploadMedia: (filePath: string) =>
+    new Promise<{ url: string; kind: 'image' | 'video' }>((resolve, reject) => {
+      uni.uploadFile({
+        url: `${baseUrl()}/uploads`,
+        filePath,
+        name: 'file',
+        header: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+        success(res) {
+          const data = JSON.parse(String(res.data || '{}')) as { error?: string; url?: string; kind?: 'image' | 'video' }
+          if ((res.statusCode || 0) >= 400 || !data.url || !data.kind) {
+            reject(new ApiError(res.statusCode || 0, data.error || '上传失败', data))
+            return
+          }
+          resolve({ url: data.url, kind: data.kind })
+        },
+        fail(err) {
+          reject(new ApiError(0, err.errMsg || '上传失败', err))
+        },
+      })
+    }),
   deleteMeal: (id: string) => request<{ ok: boolean }>(`/meals/${id}`, { method: 'DELETE', data: {} }),
   logWeight: (weightKg: number) =>
     request<{ id: string; weightKg: number; loggedAt: string }>('/metrics', {
