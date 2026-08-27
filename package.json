@@ -1,0 +1,24 @@
+{
+  "name": "kailian",
+  "private": true,
+  "version": "0.1.0",
+  "description": "开练 — Vue 3 + Node.js 健身训练记录",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run db:setup -w api",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
+    "dev:api": "npm run dev -w api",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web && npm run build -w api",
+    "db:setup": "npm run db:setup -w api",
+    "db:seed": "npm run db:seed -w api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

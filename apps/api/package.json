@@ -1,0 +1,31 @@
+{
+  "name": "api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:setup": "node --input-type=module -e \"import fs from 'node:fs'; if (!fs.existsSync('.env')) fs.copyFileSync('.env.example', '.env');\" && prisma generate && prisma db push && tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.0.1",
+    "@fastify/jwt": "^9.1.0",
+    "@prisma/client": "^6.16.1",
+    "bcryptjs": "^3.0.2",
+    "fastify": "^5.6.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^24.13.3",
+    "prisma": "^6.16.1",
+    "tsx": "^4.20.5",
+    "typescript": "~5.9.2"
+  }
+}
