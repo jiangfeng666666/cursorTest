@@ -1,0 +1,73 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "今天"
+      }
+    },
+    {
+      "path": "pages/history/history",
+      "style": {
+        "navigationBarTitleText": "训练本"
+      }
+    },
+    {
+      "path": "pages/progress/progress",
+      "style": {
+        "navigationBarTitleText": "曲线"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "开练"
+      }
+    },
+    {
+      "path": "pages/register/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/train/train",
+      "style": {
+        "navigationBarTitleText": "训练"
+      }
+    },
+    {
+      "path": "pages/meals/meals",
+      "style": {
+        "navigationBarTitleText": "吃饭"
+      }
+    },
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "开练",
+    "navigationBarBackgroundColor": "#11140f",
+    "backgroundColor": "#11140f",
+    "backgroundColorContent": "#11140f"
+  },
+  "tabBar": {
+    "color": "#8b937c",
+    "selectedColor": "#d6ff4b",
+    "backgroundColor": "#11140f",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "今天"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "text": "记录"
+      },
+      {
+        "pagePath": "pages/progress/progress",
+        "text": "曲线"
+      }
+    ]
+  }
+}
