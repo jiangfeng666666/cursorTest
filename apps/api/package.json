@@ -10,7 +10,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "node --input-type=module -e \"import fs from 'node:fs'; if (!fs.existsSync('.env')) fs.copyFileSync('.env.example', '.env');\" && prisma generate && prisma db push && tsx prisma/seed.ts"
+    "db:setup": "node --input-type=module -e \"import fs from 'node:fs'; if (!fs.existsSync('.env')) fs.copyFileSync('.env.example', '.env');\" && prisma generate && prisma db push && tsx prisma/seed.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
